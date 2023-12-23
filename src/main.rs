@@ -8,12 +8,14 @@ use serenity::prelude::*;
 use serenity::Client;
 use serenity::builder::*;
 
+use regex::Regex;
+
 struct Handler;
 
 #[serenity::async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-       if msg.content == "y!ping" {
+        if msg.content.starts_with("y!ping") {
             let ping = Timestamp::now().timestamp_millis() - msg.timestamp.timestamp_millis();
             let embed = CreateEmbed::new()
                 .title("Pong!")
@@ -23,7 +25,16 @@ impl EventHandler for Handler {
             if let Err(err) = msg.channel_id.send_message(&ctx.http, builder).await {
                 println!("ERROR: {err}");
             }
-        } 
+        }
+
+        let re = Regex::new(r"https://(x|twitter).com/.*/status/.*").unwrap();
+        if re.is_match(&msg.content) {
+            let re = Regex::new(r"(x|twitter).com").unwrap();
+            let replaced_url = re.replace_all(&msg.content, "vxtwitter.com");
+            if let Err(err) = msg.channel_id.say(&ctx, replaced_url).await {
+                println!("ERROR: {err}");
+            }
+        }
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
